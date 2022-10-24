@@ -13,7 +13,7 @@ from utils.opt import video_parse_opt
 
 def detector(inputs, model):
     #   Class labels for prediction
-    class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 'hypopharnyx', 'junction', 'pylorus', 'reverse']
+    class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 'hypopharnyx', 'junction', 'pylorus', 'fundus']
     soft = torch.nn.Softmax(dim=1)
     outputs = model(inputs)
     out = soft(outputs)
@@ -75,16 +75,16 @@ if __name__ == '__main__':
     seconds, minutes = 0, 0
     
     frame_label = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'reverse':0, 'blank':0}
+                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
     frame_count = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'reverse':0, 'blank':0}
+                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
     timer_label = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'reverse':0, 'blank':0}
+                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
     threshold =  {'angle':False, 'duodenum':False, 'esophagus':False, 'greater_curvature':False, \
-                    'hypopharnyx':False, 'junction':False, 'pylorus':False, 'reverse':False, 'blank':False}
+                    'hypopharnyx':False, 'junction':False, 'pylorus':False, 'fundus':False, 'blank':False}
     
-    label_position = {'angle':[50,50], 'duodenum':[50,100], 'esophagus':[50,150], 'greater_curvature':[50,200], \
-                    'hypopharnyx':[50,250], 'junction':[50,300], 'pylorus':[50,350], 'reverse':[50,400]}
+    label_position = {'angle':[50,350], 'duodenum':[50,300], 'esophagus':[50,100], 'greater_curvature':[50,200], \
+                    'hypopharnyx':[50,50], 'junction':[50,150], 'pylorus':[50,250], 'fundus':[50,400]}
     
     while cap.isOpened():
         try:
