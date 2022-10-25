@@ -13,7 +13,8 @@ from utils.opt import video_parse_opt
 
 def detector(inputs, model):
     #   Class labels for prediction
-    class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 'hypopharnyx', 'junction', 'pylorus', 'fundus']
+    class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 
+                   'hypopharnyx', 'junction', 'pylorus', 'fundus']
     soft = torch.nn.Softmax(dim=1)
     outputs = model(inputs)
     out = soft(outputs)
@@ -48,12 +49,13 @@ if __name__ == '__main__':
     if not os.path.isdir(save_path):
         os.mkdir(save_path)
     
-    stomachIcon = cv2.imread('stomachicon.jpg')
-    stomachIcon = cv2.resize(stomachIcon, (200, 200), interpolation=cv2.INTER_CUBIC)
+    stomachIcon = cv2.imread('graystomach.png')
+    stomachIcon = cv2.resize(stomachIcon, (300, 300), interpolation=cv2.INTER_CUBIC)
+    precentLocation = 'blank'
 
     #   load model 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = torch.load(model_path,map_location=device)
+    model = torch.load(model_path, map_location=device)
     model = model.eval()
 
 
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     fps = cap.get(cv2.CAP_PROP_FPS)
     height, width = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_name = (video_path.split('/')[-1]).split('.')[0]
-    out = cv2.VideoWriter(os.path.join(save_path, '{}.mp4'.format(video_name)), fourcc, fps, (width, height))
+    out = cv2.VideoWriter(os.path.join(save_path, '{}.mp4'.format(video_name)), fourcc, fps, (width+300, height))
 
     frameID = 0
     time_start = time.time()
@@ -89,6 +91,10 @@ if __name__ == '__main__':
     label_position = {'angle':[50,350], 'duodenum':[50,300], 'esophagus':[50,100], 'greater_curvature':[50,200], \
                     'hypopharnyx':[50,50], 'junction':[50,150], 'pylorus':[50,250], 'fundus':[50,400]}
     
+    image_position = {'angle':[93, 162, 145, 179], 'duodenum':[43,180, 125, 300], 'esophagus':[0,23,85,50],
+                     'greater_curvature':[140,275, 300, 300], 'hypopharnyx':[190,0,295,25], 
+                     'junction':[31,98,104,117], 'pylorus':[12,117,82,201], 'fundus':[220,35,287,55]}
+
     while cap.isOpened():
         try:
             ret, frame = cap.read()
@@ -97,7 +103,9 @@ if __name__ == '__main__':
             frame_copy = Image.fromarray(frame_copy)
             inputs = preprocess(frame_copy).unsqueeze(0).to(device)
             label = detector(inputs, model)
-            
+            # frame 增加黑邊
+            frame = cv2.copyMakeBorder(frame, 0, 0, 0, 300, cv2.BORDER_CONSTANT,value=(0,0,0))
+            blk = np.zeros(frame.shape, np.uint8)  
             # Time counter 計算影片時長
             mins, secs = time_counter(time_start, minutes, seconds)
             timestamp = "{}:{}".format(mins, secs)
@@ -105,7 +113,7 @@ if __name__ == '__main__':
                             1, (255, 255, 255), 2, cv2.LINE_AA)
             
             # 將 stomach icon 與 frame 融合
-            frame[height-200:height, width-200:width] = stomachIcon
+            frame[0:300, width:width+300] = stomachIcon
             
             
             # 加上灰色 label
@@ -127,7 +135,7 @@ if __name__ == '__main__':
 
             # 當特定label的幀數連續出現且達到閥值時，該label的閥門就會變成true
             if label != 'blank':
-                if threshold[label]==False and frame_count[label]>30: # threshold setting as 60 frames
+                if threshold[label]==False and frame_count[label]>=15: # threshold setting as 60 frames
                     threshold[label]=True
 
             # 當閥門打開後，就會顯示偵測到該label
@@ -138,6 +146,17 @@ if __name__ == '__main__':
                     timer_label[key] = timer_label[key] + 1    
                     cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
                                 1, (127, 255, 0), 2, cv2.LINE_AA)  
+
+            # 判定現在的位置
+            # 如果該位置連續出現 n frames 則判定為該位置
+            if label != 'blank' and frame_count[label] >= 15:
+                print('i am here')
+                precentLocation = label
+            if precentLocation != 'blank':
+                position = image_position[precentLocation]
+                x0, y0, x1, y1 = position[0], position[1], position[2], position[3]
+                cv2.rectangle(blk, (width+x0, y0), (width+x1, y1), (255, 255, 0), -1)
+                frame = cv2.addWeighted(frame, 1.0, blk, 0.5, 1)
 
             frameID += 1
             # 寫入影片

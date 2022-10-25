@@ -13,13 +13,13 @@ def video_parse_opt():
     parser.add_argument(
         '--model_path',
         type=str,
-        default='checkpoint/stomach_classified_1019.pth',
+        default='checkpoint/stomach_classified_1021.pth',
         help='path of the config.'
     )
     parser.add_argument(
         '--video_path',
         type=str,
-        default='video/2022081201.mp4',
+        default='video/2022071501.mp4',
         help='path of the video.'
     )
     parser.add_argument(
