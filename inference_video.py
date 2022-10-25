@@ -47,6 +47,9 @@ if __name__ == '__main__':
     save_path = opt.save_path
     if not os.path.isdir(save_path):
         os.mkdir(save_path)
+    
+    stomachIcon = cv2.imread('stomachicon.jpg')
+    stomachIcon = cv2.resize(stomachIcon, (200, 200), interpolation=cv2.INTER_CUBIC)
 
     #   load model 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -100,6 +103,11 @@ if __name__ == '__main__':
             timestamp = "{}:{}".format(mins, secs)
             cv2.putText(frame, timestamp, (600, 50), cv2.FONT_ITALIC, 
                             1, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            # 將 stomach icon 與 frame 融合
+            frame[height-200:height, width-200:width] = stomachIcon
+            
+            
             # 加上灰色 label
             for key in label_position:
                 cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
@@ -129,8 +137,7 @@ if __name__ == '__main__':
                 if threshold[key] == True:
                     timer_label[key] = timer_label[key] + 1    
                     cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
-                                1, (127, 255, 0), 2, cv2.LINE_AA)
-                    
+                                1, (127, 255, 0), 2, cv2.LINE_AA)  
 
             frameID += 1
             # 寫入影片
