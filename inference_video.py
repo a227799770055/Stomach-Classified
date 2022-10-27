@@ -3,6 +3,7 @@ import cv2
 import time
 from cv2 import threshold
 import numpy as np
+from sympy import HeuristicGCDFailed
 import torch
 import torch.nn
 from torchvision import models, transforms
@@ -118,9 +119,11 @@ if __name__ == '__main__':
             frame[0:300, width:width+300] = stomachIcon
             
             
-            # 加上灰色 label
+            # 加上灰色 label 
             for key in label_position:
                 cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
+                            1, (128,128,128), 2, cv2.LINE_AA)
+            cv2.putText(frame, label, (width, height), cv2.FONT_ITALIC, 
                             1, (128,128,128), 2, cv2.LINE_AA)
             
             # 計算label連續出現的幀數，當沒有連貫時，幀數歸0
@@ -158,6 +161,8 @@ if __name__ == '__main__':
                 x0, y0, x1, y1 = position[0], position[1], position[2], position[3]
                 cv2.rectangle(blk, (width+x0, y0), (width+x1, y1), (255, 0, 0), -1)
                 frame = cv2.addWeighted(frame, 1.0, blk, 0.5, 1)
+            
+
 
             frameID += 1
             # 寫入影片
