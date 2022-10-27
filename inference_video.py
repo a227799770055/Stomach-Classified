@@ -3,6 +3,7 @@ import cv2
 import time
 from cv2 import threshold
 import numpy as np
+from sympy import HeuristicGCDFailed
 import torch
 import torch.nn
 from torchvision import models, transforms
@@ -13,13 +14,15 @@ from utils.opt import video_parse_opt
 
 def detector(inputs, model):
     #   Class labels for prediction
+    class_names = ['angle', 'duodenum', 'esophagus', 'fundus','greater_curvature', 
+                   'hypopharnyx', 'junction', 'pylorus' ] #after 1025 weights
     class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 
-                   'hypopharnyx', 'junction', 'pylorus', 'fundus']
+                   'hypopharnyx', 'junction', 'pylorus','fundus' ]
     soft = torch.nn.Softmax(dim=1)
     outputs = model(inputs)
     out = soft(outputs)
     out = out.cpu().detach().numpy()
-    out = out[0]>0.95
+    out = out[0]>0.99
     pred = np.where(out==True)[0]
     
     if len(pred) != 0:
@@ -91,7 +94,7 @@ if __name__ == '__main__':
     label_position = {'angle':[50,350], 'duodenum':[50,300], 'esophagus':[50,100], 'greater_curvature':[50,200], \
                     'hypopharnyx':[50,50], 'junction':[50,150], 'pylorus':[50,250], 'fundus':[50,400]}
     
-    image_position = {'angle':[93, 162, 145, 179], 'duodenum':[43,180, 125, 300], 'esophagus':[0,23,85,50],
+    image_position = {'angle':[93, 162, 145, 179], 'duodenum':[45,270, 125, 300], 'esophagus':[0,23,85,50],
                      'greater_curvature':[140,275, 300, 300], 'hypopharnyx':[190,0,295,25], 
                      'junction':[31,98,104,117], 'pylorus':[12,117,82,201], 'fundus':[220,35,287,55]}
 
@@ -116,9 +119,11 @@ if __name__ == '__main__':
             frame[0:300, width:width+300] = stomachIcon
             
             
-            # 加上灰色 label
+            # 加上灰色 label 
             for key in label_position:
                 cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
+                            1, (128,128,128), 2, cv2.LINE_AA)
+            cv2.putText(frame, label, (width, height), cv2.FONT_ITALIC, 
                             1, (128,128,128), 2, cv2.LINE_AA)
             
             # 計算label連續出現的幀數，當沒有連貫時，幀數歸0
@@ -135,7 +140,7 @@ if __name__ == '__main__':
 
             # 當特定label的幀數連續出現且達到閥值時，該label的閥門就會變成true
             if label != 'blank':
-                if threshold[label]==False and frame_count[label]>=15: # threshold setting as 60 frames
+                if threshold[label]==False and frame_count[label]>=20: # threshold setting as 60 frames
                     threshold[label]=True
 
             # 當閥門打開後，就會顯示偵測到該label
@@ -149,14 +154,15 @@ if __name__ == '__main__':
 
             # 判定現在的位置
             # 如果該位置連續出現 n frames 則判定為該位置
-            if label != 'blank' and frame_count[label] >= 15:
-                print('i am here')
+            if label != 'blank' and frame_count[label] >= 20:
                 precentLocation = label
             if precentLocation != 'blank':
                 position = image_position[precentLocation]
                 x0, y0, x1, y1 = position[0], position[1], position[2], position[3]
-                cv2.rectangle(blk, (width+x0, y0), (width+x1, y1), (255, 255, 0), -1)
+                cv2.rectangle(blk, (width+x0, y0), (width+x1, y1), (255, 0, 0), -1)
                 frame = cv2.addWeighted(frame, 1.0, blk, 0.5, 1)
+            
+
 
             frameID += 1
             # 寫入影片

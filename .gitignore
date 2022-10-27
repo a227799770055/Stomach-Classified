@@ -2,4 +2,8 @@ checkpoint
 images
 output
 video
+<<<<<<< HEAD
 .DS_Store
+=======
+video_run.py
+>>>>>>> ed009dc2cd0bc9b876338156bdb4b814cba9cce0
