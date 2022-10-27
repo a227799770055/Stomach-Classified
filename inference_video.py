@@ -3,7 +3,6 @@ import cv2
 import time
 from cv2 import threshold
 import numpy as np
-from sympy import HeuristicGCDFailed
 import torch
 import torch.nn
 from torchvision import models, transforms
@@ -14,10 +13,10 @@ from utils.opt import video_parse_opt
 
 def detector(inputs, model):
     #   Class labels for prediction
-    class_names = ['angle', 'duodenum', 'esophagus', 'fundus','greater_curvature', 
-                   'hypopharnyx', 'junction', 'pylorus' ] #after 1025 weights
-    class_names = ['angle', 'duodenum', 'esophagus', 'greater_curvature', 
-                   'hypopharnyx', 'junction', 'pylorus','fundus' ]
+    class_names = ['Lesser_curvature', 'Duodenum', 'Esophagus', 'Fundus','Greater_curvature', 
+                   'Hypopharnyx', 'EG Junction', 'Pylorus' ] #after 1025 weights
+    class_names = ['Lesser_curvature', 'Duodenum', 'Esophagus', 'Greater_curvature', 
+                   'Hypopharnyx', 'EG Junction', 'Pylorus','Fundus' ]
     soft = torch.nn.Softmax(dim=1)
     outputs = model(inputs)
     out = soft(outputs)
@@ -55,6 +54,22 @@ if __name__ == '__main__':
     stomachIcon = cv2.imread('graystomach.png')
     stomachIcon = cv2.resize(stomachIcon, (300, 300), interpolation=cv2.INTER_CUBIC)
     precentLocation = 'blank'
+    
+    partitionImgURL = {'Lesser_curvature':'partition/lesser curvature.png', 
+                'Duodenum':'partition/Duodenum.png', 
+                'Esophagus':'partition/Esophagus.png', 
+                'Greater_curvature':'partition/Greater curvature.png',
+                'Hypopharnyx':'partition/Hypopharnyx.png', 
+                'EG Junction':'partition/EG junction.png', 
+                'Pylorus':'partition/Pylorus.png', 
+                'Fundus':'partition/Fundus.png',
+                'blank':'partition/Blank.png'
+                }
+    partitionImg = {}
+    for key in partitionImgURL.keys():
+        key_img = cv2.imread(partitionImgURL[key])
+        key_img = cv2.resize(key_img, (300, 300), interpolation=cv2.INTER_CUBIC)
+        partitionImg[key] = key_img
 
     #   load model 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -82,21 +97,21 @@ if __name__ == '__main__':
     time_start = time.time()
     seconds, minutes = 0, 0
     
-    frame_label = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
-    frame_count = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
-    timer_label = {'angle':0, 'duodenum':0, 'esophagus':0, 'greater_curvature':0, \
-                    'hypopharnyx':0, 'junction':0, 'pylorus':0, 'fundus':0, 'blank':0}
-    threshold =  {'angle':False, 'duodenum':False, 'esophagus':False, 'greater_curvature':False, \
-                    'hypopharnyx':False, 'junction':False, 'pylorus':False, 'fundus':False, 'blank':False}
+    frame_label = {'Lesser_curvature':0, 'Duodenum':0, 'Esophagus':0, 'Greater_curvature':0, \
+                    'Hypopharnyx':0, 'EG Junction':0, 'Pylorus':0, 'Fundus':0, 'blank':0}
+    frame_count = {'Lesser_curvature':0, 'Duodenum':0, 'Esophagus':0, 'Greater_curvature':0, \
+                    'Hypopharnyx':0, 'EG Junction':0, 'Pylorus':0, 'Fundus':0, 'blank':0}
+    timer_label = {'Lesser_curvature':0, 'Duodenum':0, 'Esophagus':0, 'Greater_curvature':0, \
+                    'Hypopharnyx':0, 'EG Junction':0, 'Pylorus':0, 'Fundus':0, 'blank':0}
+    threshold =  {'Lesser_curvature':False, 'Duodenum':False, 'Esophagus':False, 'Greater_curvature':False, \
+                    'Hypopharnyx':False, 'EG Junction':False, 'Pylorus':False, 'Fundus':False, 'blank':False}
     
-    label_position = {'angle':[50,350], 'duodenum':[50,300], 'esophagus':[50,100], 'greater_curvature':[50,200], \
-                    'hypopharnyx':[50,50], 'junction':[50,150], 'pylorus':[50,250], 'fundus':[50,400]}
+    label_position = {'Lesser_curvature':[50,350], 'Duodenum':[50,300], 'Esophagus':[50,100], 'Greater_curvature':[50,200], \
+                    'Hypopharnyx':[50,50], 'EG Junction':[50,150], 'Pylorus':[50,250], 'Fundus':[50,400]}
     
-    image_position = {'angle':[93, 162, 145, 179], 'duodenum':[45,270, 125, 300], 'esophagus':[0,23,85,50],
-                     'greater_curvature':[140,275, 300, 300], 'hypopharnyx':[190,0,295,25], 
-                     'junction':[31,98,104,117], 'pylorus':[12,117,82,201], 'fundus':[220,35,287,55]}
+    image_position = {'Lesser_curvature':[93, 162, 145, 179], 'Duodenum':[45,270, 125, 300], 'Esophagus':[0,23,85,50],
+                     'Greater_curvature':[140,275, 300, 300], 'Hypopharnyx':[190,0,295,25], 
+                     'EG Junction':[31,98,104,117], 'Pylorus':[12,117,82,201], 'Fundus':[220,35,287,55]}
 
     while cap.isOpened():
         try:
@@ -115,16 +130,13 @@ if __name__ == '__main__':
             cv2.putText(frame, timestamp, (600, 50), cv2.FONT_ITALIC, 
                             1, (255, 255, 255), 2, cv2.LINE_AA)
             
-            # 將 stomach icon 與 frame 融合
-            frame[0:300, width:width+300] = stomachIcon
-            
-            
             # 加上灰色 label 
             for key in label_position:
                 cv2.putText(frame, key, (label_position[key][0], label_position[key][1]), cv2.FONT_ITALIC, 
                             1, (128,128,128), 2, cv2.LINE_AA)
             cv2.putText(frame, label, (width, height), cv2.FONT_ITALIC, 
                             1, (128,128,128), 2, cv2.LINE_AA)
+            
             
             # 計算label連續出現的幀數，當沒有連貫時，幀數歸0
             # frame_label 紀錄上一幀的位置
@@ -157,11 +169,9 @@ if __name__ == '__main__':
             if label != 'blank' and frame_count[label] >= 20:
                 precentLocation = label
             if precentLocation != 'blank':
-                position = image_position[precentLocation]
-                x0, y0, x1, y1 = position[0], position[1], position[2], position[3]
-                cv2.rectangle(blk, (width+x0, y0), (width+x1, y1), (255, 0, 0), -1)
-                frame = cv2.addWeighted(frame, 1.0, blk, 0.5, 1)
-            
+                frame[250:550, width:width+300] = partitionImg[precentLocation]
+            else:
+                frame[250:550, width:width+300] = partitionImg['blank']
 
 
             frameID += 1

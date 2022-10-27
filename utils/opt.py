@@ -19,7 +19,7 @@ def video_parse_opt():
     parser.add_argument(
         '--video_path',
         type=str,
-        default='video/2022090102.mp4',
+        default='video/2022071501.mp4',
         help='path of the video.'
     )
     parser.add_argument(
